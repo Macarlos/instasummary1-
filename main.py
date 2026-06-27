@@ -1,10 +1,11 @@
 """
 InstaSummary — FastAPI backend
-Takes a URL, fetches page content, returns a 5-bullet AI summary via Claude API.
+Takes a URL, fetches page content, returns a 5-bullet AI summary via Google Gemini Flash API.
 """
 
 import httpx
-import anthropic
+import google.generativeai as genai
+import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -14,7 +15,6 @@ from bs4 import BeautifulSoup
 
 app = FastAPI(title="InstaSummary")
 
-# Allow the frontend (same origin or localhost dev) to call the API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,10 +22,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Serve the frontend HTML at the root
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-client = anthropic.Anthropic()  # reads ANTHROPIC_API_KEY from env automatically
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+model = genai.GenerativeModel("gemini-1.5-flash")
 
 
 class SummariseRequest(BaseModel):
@@ -39,7 +39,6 @@ class SummariseResponse(BaseModel):
 
 
 def fetch_page_text(url: str) -> tuple[str, str]:
-    """Fetch a URL and return (page_title, clean_body_text)."""
     headers = {"User-Agent": "Mozilla/5.0 (InstaSummary Bot)"}
     try:
         r = httpx.get(url, headers=headers, follow_redirects=True, timeout=10)
@@ -48,22 +47,16 @@ def fetch_page_text(url: str) -> tuple[str, str]:
         raise HTTPException(status_code=422, detail=f"Could not fetch URL: {e}")
 
     soup = BeautifulSoup(r.text, "html.parser")
-
-    # Extract title
     title = soup.title.string.strip() if soup.title else "Untitled"
 
-    # Remove noise tags
     for tag in soup(["script", "style", "nav", "footer", "header", "aside", "form"]):
         tag.decompose()
 
     text = soup.get_text(separator="\n", strip=True)
-
-    # Trim to ~6000 chars to stay well within token limits
     return title, text[:6000]
 
 
-def summarise_with_claude(title: str, text: str) -> list[str]:
-    """Call Claude and parse exactly 5 bullet points."""
+def summarise_with_gemini(title: str, text: str) -> list[str]:
     prompt = f"""You are a world-class summariser. Read the article below and return EXACTLY 5 bullet points.
 
 Rules:
@@ -78,15 +71,9 @@ Article text:
 {text}
 """
 
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=512,
-        messages=[{"role": "user", "content": prompt}],
-    )
+    response = model.generate_content(prompt)
+    raw = response.text.strip()
 
-    raw = message.content[0].text.strip()
-
-    # Parse "- bullet" lines
     bullets = [
         line.lstrip("- ").strip()
         for line in raw.splitlines()
@@ -110,5 +97,5 @@ def index():
 def summarise(req: SummariseRequest):
     url_str = str(req.url)
     title, text = fetch_page_text(url_str)
-    bullets = summarise_with_claude(title, text)
+    bullets = summarise_with_gemini(title, text)
     return SummariseResponse(title=title, bullets=bullets, source_url=url_str)
