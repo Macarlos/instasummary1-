@@ -1,5 +1,5 @@
 """
-InstaSummary — FastAPI backend
+InstaSummary - FastAPI backend
 Takes a URL, fetches page content, returns a 5-bullet AI summary via Google Gemini Flash API.
 """
 
@@ -23,7 +23,7 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
 
