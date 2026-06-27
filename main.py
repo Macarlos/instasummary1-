@@ -4,7 +4,6 @@ Takes a URL, fetches page content, returns a 5-bullet AI summary via Google Gemi
 """
 
 import httpx
-import google.generativeai as genai
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -24,8 +23,8 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-model = genai.GenerativeModel("gemini-1.5-flash")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
 
 
 class SummariseRequest(BaseModel):
@@ -71,8 +70,21 @@ Article text:
 {text}
 """
 
-    response = model.generate_content(prompt)
-    raw = response.text.strip()
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}]
+    }
+
+    r = httpx.post(
+        GEMINI_URL,
+        params={"key": GEMINI_API_KEY},
+        json=payload,
+        timeout=30
+    )
+
+    if r.status_code != 200:
+        raise HTTPException(status_code=500, detail=f"Gemini API error: {r.text}")
+
+    raw = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
 
     bullets = [
         line.lstrip("- ").strip()
