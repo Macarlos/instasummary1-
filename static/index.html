@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InstaSummary — Any article. 5 bullets. Done.</title>
+  <style>
+    /* ── Tokens ──────────────────────────────────────────────── */
+    :root {
+      --ink:      #0f0f0f;
+      --paper:    #f7f6f2;
+      --accent:   #1a56db;
+      --accent-h: #1344b5;
+      --muted:    #6b7280;
+      --border:   #e2e0d8;
+      --bullet-bg:#eef3ff;
+      --radius:   10px;
+      --shadow:   0 2px 12px rgba(0,0,0,.08);
+    }
+
+    /* ── Reset ───────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: 'Georgia', serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.25rem 5rem;
+    }
+
+    /* ── Wordmark ─────────────────────────────────────────────── */
+    .wordmark {
+      font-family: 'Georgia', serif;
+      font-size: 1.15rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 2.5rem;
+    }
+
+    /* ── Hero headline ───────────────────────────────────────── */
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      line-height: 1.15;
+      text-align: center;
+      max-width: 640px;
+      margin-bottom: .75rem;
+    }
+
+    .sub {
+      color: var(--muted);
+      font-size: 1.05rem;
+      text-align: center;
+      margin-bottom: 2.5rem;
+      font-style: italic;
+    }
+
+    /* ── Input card ──────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: .625rem;
+    }
+
+    input[type="url"] {
+      flex: 1;
+      padding: .7rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      font-size: 1rem;
+      font-family: 'Georgia', serif;
+      color: var(--ink);
+      background: var(--paper);
+      outline: none;
+      transition: border-color .15s;
+    }
+    input[type="url"]:focus { border-color: var(--accent); }
+
+    button#go {
+      padding: .7rem 1.4rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      font-family: 'Georgia', serif;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    button#go:hover { background: var(--accent-h); }
+    button#go:disabled { opacity: .55; cursor: not-allowed; }
+
+    /* ── States ──────────────────────────────────────────────── */
+    #status {
+      margin-top: 1.25rem;
+      font-size: .9rem;
+      color: var(--muted);
+      font-style: italic;
+      min-height: 1.4em;
+    }
+
+    #error {
+      margin-top: 1rem;
+      color: #b91c1c;
+      font-size: .9rem;
+    }
+
+    /* ── Results ─────────────────────────────────────────────── */
+    #result { display: none; margin-top: 2rem; }
+
+    #result h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.35;
+    }
+
+    .bullets { list-style: none; display: flex; flex-direction: column; gap: .6rem; }
+
+    .bullets li {
+      background: var(--bullet-bg);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: .65rem 1rem;
+      font-size: .97rem;
+      line-height: 1.5;
+    }
+
+    .result-footer {
+      margin-top: 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: .5rem;
+    }
+
+    .source-link {
+      font-size: .8rem;
+      color: var(--muted);
+      text-decoration: none;
+      word-break: break-all;
+    }
+    .source-link:hover { color: var(--accent); }
+
+    button#share {
+      padding: .45rem .9rem;
+      border: 1.5px solid var(--accent);
+      background: transparent;
+      color: var(--accent);
+      border-radius: 6px;
+      font-size: .85rem;
+      cursor: pointer;
+      font-family: 'Georgia', serif;
+      transition: all .15s;
+    }
+    button#share:hover { background: var(--accent); color: #fff; }
+
+    /* ── Cookie banner ───────────────────────────────────────── */
+    #cookie-banner {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #1f2937;
+      color: #e5e7eb;
+      font-family: Arial, sans-serif;
+      font-size: .82rem;
+      line-height: 1.5;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.25rem;
+      flex-wrap: wrap;
+      z-index: 999;
+      box-shadow: 0 -2px 12px rgba(0,0,0,.2);
+    }
+    #cookie-banner p { flex: 1; min-width: 200px; }
+    #cookie-banner a { color: #93c5fd; text-underline-offset: 2px; }
+    #cookie-banner button {
+      padding: .5rem 1.1rem;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: .82rem;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s;
+    }
+    #cookie-banner button:hover { background: var(--accent-h); }
+
+    /* ── Footer ──────────────────────────────────────────────── */
+    footer {
+      margin-top: 4rem;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    .footer-legal {
+      border-top: 1px solid var(--border);
+      padding-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .footer-brand {
+      font-size: .8rem;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: .25rem;
+    }
+
+    .footer-disclaimer {
+      font-size: .75rem;
+      color: var(--muted);
+      line-height: 1.6;
+      font-family: Arial, sans-serif;
+    }
+
+    .footer-disclaimer strong {
+      color: #4b5563;
+    }
+
+    .footer-copy {
+      font-size: .75rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: .5rem;
+      font-family: Arial, sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="wordmark">InstaSummary</div>
+
+  <h1>Any article.<br>Five bullets.<br>Right now.</h1>
+  <p class="sub">Paste a URL — get back what matters.</p>
+
+  <div class="card">
+    <div class="input-row">
+      <input type="url" id="url-input" placeholder="https://example.com/article" autocomplete="off" />
+      <button id="go">Summarise →</button>
+    </div>
+
+    <p id="status"></p>
+    <p id="error"></p>
+
+    <div id="result">
+      <h2 id="article-title"></h2>
+      <ul class="bullets" id="bullets-list"></ul>
+      <div class="result-footer">
+        <a id="source-link" class="source-link" href="#" target="_blank" rel="noopener">View original ↗</a>
+        <button id="share">Copy summary</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <div class="footer-legal">
+      <p class="footer-brand">InstaSummary &nbsp;·&nbsp; Powered by Claude</p>
+
+      <p class="footer-disclaimer">
+        <strong>Disclaimer:</strong> InstaSummary is an AI-powered tool that generates automated summaries of third-party content.
+        Summaries are produced by an AI model and may be incomplete, inaccurate, or misleading.
+        They are provided for informational purposes only and do not constitute legal, financial, medical, or professional advice.
+        Always refer to the original source before acting on any information.
+      </p>
+
+      <p class="footer-disclaimer">
+        <strong>Copyright & Fair Use:</strong> InstaSummary does not store, reproduce, or redistribute article content.
+        Summaries are transformative in nature and intended to point users to original sources.
+        All original article content remains the property of its respective copyright holders.
+        If you are a publisher and have concerns about your content, please contact us.
+      </p>
+
+      <p class="footer-disclaimer">
+        <strong>Privacy:</strong> InstaSummary does not collect personal data, require registration, or use tracking cookies.
+        URLs you submit are processed in real time solely to generate a summary and are not stored or shared.
+      </p>
+
+      <p class="footer-disclaimer">
+        <strong>No Warranty:</strong> This service is provided "as is" without warranty of any kind.
+        Use at your own risk. InstaSummary accepts no liability for decisions made based on AI-generated summaries.
+      </p>
+
+      <p class="footer-copy">&copy; <span id="yr"></span> InstaSummary. All rights reserved.</p>
+    </div>
+  </footer>
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+
+  <script>
+    const input    = document.getElementById('url-input');
+    const goBtn    = document.getElementById('go');
+    const status   = document.getElementById('status');
+    const errorEl  = document.getElementById('error');
+    const result   = document.getElementById('result');
+    const titleEl  = document.getElementById('article-title');
+    const listEl   = document.getElementById('bullets-list');
+    const srcLink  = document.getElementById('source-link');
+    const shareBtn = document.getElementById('share');
+
+    goBtn.addEventListener('click', run);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') run(); });
+
+    async function run() {
+      const url = input.value.trim();
+      if (!url) { shake(input); return; }
+
+      // Reset
+      errorEl.textContent = '';
+      result.style.display = 'none';
+      goBtn.disabled = true;
+      status.textContent = 'Fetching article…';
+
+      try {
+        const res = await fetch('/summarise', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+
+        const rawText = await res.text();
+        let data;
+        try {
+          data = JSON.parse(rawText);
+        } catch {
+          throw new Error(`Server error (${res.status}): ${rawText.slice(0, 200)}`);
+        }
+
+        if (!res.ok) {
+          throw new Error(data.detail || 'Something went wrong.');
+        }
+
+        status.textContent = 'Summarising with AI…';
+
+        // Render
+        titleEl.textContent = data.title;
+        listEl.innerHTML = data.bullets.map(b => `<li>${b}</li>`).join('');
+        srcLink.href = data.source_url;
+        result.style.display = 'block';
+        status.textContent = '';
+
+      } catch (e) {
+        errorEl.textContent = e.message;
+        status.textContent = '';
+      } finally {
+        goBtn.disabled = false;
+      }
+    }
+
+    shareBtn.addEventListener('click', () => {
+      const lines = [...listEl.querySelectorAll('li')].map((li, i) => `${i+1}. ${li.textContent}`);
+      const text  = `${titleEl.textContent}\n\n${lines.join('\n')}\n\nSummarised by InstaSummary`;
+      navigator.clipboard.writeText(text).then(() => {
+        shareBtn.textContent = 'Copied!';
+        setTimeout(() => shareBtn.textContent = 'Copy summary', 2000);
+      });
+    });
+
+    function shake(el) {
+      el.style.animation = 'none';
+      el.offsetHeight; // reflow
+      el.style.animation = 'shake .3s ease';
+    }
+  </script>
+
+  <!-- ── Cookie / Privacy notice (EU ePrivacy) ───────────────── -->
+  <div id="cookie-banner" role="region" aria-label="Privacy notice" style="display:none">
+    <p>
+      🍪 <strong>No cookies here.</strong>
+      InstaSummary does not use cookies, trackers, or analytics.
+      The URLs you submit are processed in real time and never stored.
+      We collect no personal data.
+    </p>
+    <button id="cookie-ok" aria-label="Acknowledge privacy notice">Got it</button>
+  </div>
+
+  <script>
+    if (!localStorage.getItem('privacy-acknowledged')) {
+      document.getElementById('cookie-banner').style.display = 'flex';
+    }
+    document.getElementById('cookie-ok').addEventListener('click', () => {
+      localStorage.setItem('privacy-acknowledged', '1');
+      document.getElementById('cookie-banner').style.display = 'none';
+    });
+  </script>
+</body>
+</html>
