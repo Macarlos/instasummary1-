@@ -1,6 +1,6 @@
 """
 InstaSummary - FastAPI backend
-Takes a URL, fetches page content, returns a 5-bullet AI summary via Google Gemini Flash API.
+Takes a URL, fetches page content, returns a 5-bullet AI summary via Groq API.
 """
 
 import httpx
@@ -23,8 +23,8 @@ app.add_middleware(
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 
 class SummariseRequest(BaseModel):
@@ -55,7 +55,7 @@ def fetch_page_text(url: str) -> tuple[str, str]:
     return title, text[:6000]
 
 
-def summarise_with_gemini(title: str, text: str) -> list[str]:
+def summarise_with_groq(title: str, text: str) -> list[str]:
     prompt = f"""You are a world-class summariser. Read the article below and return EXACTLY 5 bullet points.
 
 Rules:
@@ -71,20 +71,25 @@ Article text:
 """
 
     payload = {
-        "contents": [{"parts": [{"text": prompt}]}]
+        "model": "llama-3.1-8b-instant",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 512,
     }
 
     r = httpx.post(
-        GEMINI_URL,
-        params={"key": GEMINI_API_KEY},
+        GROQ_URL,
+        headers={
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json",
+        },
         json=payload,
-        timeout=30
+        timeout=30,
     )
 
     if r.status_code != 200:
-        raise HTTPException(status_code=500, detail=f"Gemini API error: {r.text}")
+        raise HTTPException(status_code=500, detail=f"Groq API error: {r.text}")
 
-    raw = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+    raw = r.json()["choices"][0]["message"]["content"].strip()
 
     bullets = [
         line.lstrip("- ").strip()
@@ -109,5 +114,5 @@ def index():
 def summarise(req: SummariseRequest):
     url_str = str(req.url)
     title, text = fetch_page_text(url_str)
-    bullets = summarise_with_gemini(title, text)
+    bullets = summarise_with_groq(title, text)
     return SummariseResponse(title=title, bullets=bullets, source_url=url_str)
