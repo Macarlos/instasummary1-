@@ -4,8 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InstaSummary — Any article. 5 bullets. Done.</title>
+
+  <!-- Google AdSense placeholder — replace YOUR_PUBLISHER_ID when approved -->
+  <!-- <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-YOUR_PUBLISHER_ID" crossorigin="anonymous"></script> -->
+
   <style>
-    /* ── Tokens ──────────────────────────────────────────────── */
     :root {
       --ink:      #0f0f0f;
       --paper:    #f7f6f2;
@@ -18,7 +21,6 @@
       --shadow:   0 2px 12px rgba(0,0,0,.08);
     }
 
-    /* ── Reset ───────────────────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html { font-size: 16px; }
     body {
@@ -32,7 +34,6 @@
       padding: 3rem 1.25rem 5rem;
     }
 
-    /* ── Wordmark ─────────────────────────────────────────────── */
     .wordmark {
       font-family: 'Georgia', serif;
       font-size: 1.15rem;
@@ -42,7 +43,6 @@
       margin-bottom: 2.5rem;
     }
 
-    /* ── Hero headline ───────────────────────────────────────── */
     h1 {
       font-size: clamp(2rem, 5vw, 3.2rem);
       font-weight: 700;
@@ -56,11 +56,23 @@
       color: var(--muted);
       font-size: 1.05rem;
       text-align: center;
-      margin-bottom: 2.5rem;
+      margin-bottom: .5rem;
       font-style: italic;
     }
 
-    /* ── Input card ──────────────────────────────────────────── */
+    /* ── Visit counter ── */
+    .visit-counter {
+      font-size: .8rem;
+      color: var(--muted);
+      text-align: center;
+      margin-bottom: 2rem;
+      font-family: Arial, sans-serif;
+    }
+    .visit-counter span {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
     .card {
       background: #fff;
       border: 1px solid var(--border);
@@ -105,7 +117,6 @@
     button#go:hover { background: var(--accent-h); }
     button#go:disabled { opacity: .55; cursor: not-allowed; }
 
-    /* ── States ──────────────────────────────────────────────── */
     #status {
       margin-top: 1.25rem;
       font-size: .9rem;
@@ -120,7 +131,6 @@
       font-size: .9rem;
     }
 
-    /* ── Results ─────────────────────────────────────────────── */
     #result { display: none; margin-top: 2rem; }
 
     #result h2 {
@@ -171,7 +181,24 @@
     }
     button#share:hover { background: var(--accent); color: #fff; }
 
-    /* ── Cookie banner ───────────────────────────────────────── */
+    /* ── Ad slot ── */
+    .ad-slot {
+      width: 100%;
+      max-width: 640px;
+      margin: 2rem 0;
+      min-height: 90px;
+      background: #f0f0f0;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--muted);
+      font-size: .8rem;
+      font-family: Arial, sans-serif;
+    }
+
+    /* ── Cookie banner ── */
     #cookie-banner {
       position: fixed;
       bottom: 0;
@@ -184,7 +211,7 @@
       line-height: 1.5;
       padding: 1rem 1.5rem;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: space-between;
       gap: 1.25rem;
       flex-wrap: wrap;
@@ -193,10 +220,9 @@
     }
     #cookie-banner p { flex: 1; min-width: 200px; }
     #cookie-banner a { color: #93c5fd; text-underline-offset: 2px; }
-    #cookie-banner button {
+    .cookie-buttons { display: flex; gap: .5rem; flex-wrap: wrap; }
+    .cookie-buttons button {
       padding: .5rem 1.1rem;
-      background: var(--accent);
-      color: #fff;
       border: none;
       border-radius: 6px;
       font-size: .82rem;
@@ -204,9 +230,12 @@
       white-space: nowrap;
       transition: background .15s;
     }
-    #cookie-banner button:hover { background: var(--accent-h); }
+    #cookie-accept { background: var(--accent); color: #fff; }
+    #cookie-accept:hover { background: var(--accent-h); }
+    #cookie-reject { background: #374151; color: #e5e7eb; }
+    #cookie-reject:hover { background: #4b5563; }
 
-    /* ── Footer ──────────────────────────────────────────────── */
+    /* ── Footer ── */
     footer {
       margin-top: 4rem;
       width: 100%;
@@ -235,9 +264,7 @@
       font-family: Arial, sans-serif;
     }
 
-    .footer-disclaimer strong {
-      color: #4b5563;
-    }
+    .footer-disclaimer strong { color: #4b5563; }
 
     .footer-copy {
       font-size: .75rem;
@@ -254,6 +281,17 @@
 
   <h1>Any article.<br>Five bullets.<br>Right now.</h1>
   <p class="sub">Paste a URL — get back what matters.</p>
+
+  <!-- Visit counter -->
+  <p class="visit-counter">
+    Summaries generated so far: <span id="visit-count">…</span>
+  </p>
+
+  <!-- Ad slot (top) — activate when AdSense approved -->
+  <div class="ad-slot" id="ad-top">
+    <!-- AdSense ad will appear here -->
+    <span>Advertisement</span>
+  </div>
 
   <div class="card">
     <div class="input-row">
@@ -274,40 +312,105 @@
     </div>
   </div>
 
+  <!-- Ad slot (bottom) — activate when AdSense approved -->
+  <div class="ad-slot" id="ad-bottom">
+    <span>Advertisement</span>
+  </div>
+
   <footer>
     <div class="footer-legal">
-      <p class="footer-brand">InstaSummary &nbsp;·&nbsp; Powered by Claude</p>
+      <p class="footer-brand">InstaSummary &nbsp;·&nbsp; Powered by AI</p>
 
       <p class="footer-disclaimer">
         <strong>Disclaimer:</strong> InstaSummary is an AI-powered tool that generates automated summaries of third-party content.
-        Summaries are produced by an AI model and may be incomplete, inaccurate, or misleading.
-        They are provided for informational purposes only and do not constitute legal, financial, medical, or professional advice.
+        Summaries may be incomplete, inaccurate, or misleading and are for informational purposes only.
         Always refer to the original source before acting on any information.
       </p>
 
       <p class="footer-disclaimer">
         <strong>Copyright & Fair Use:</strong> InstaSummary does not store, reproduce, or redistribute article content.
         Summaries are transformative in nature and intended to point users to original sources.
-        All original article content remains the property of its respective copyright holders.
-        If you are a publisher and have concerns about your content, please contact us.
       </p>
 
       <p class="footer-disclaimer">
-        <strong>Privacy:</strong> InstaSummary does not collect personal data, require registration, or use tracking cookies.
-        URLs you submit are processed in real time solely to generate a summary and are not stored or shared.
+        <strong>Privacy & Cookies:</strong> InstaSummary uses a functional cookie solely to remember your cookie preference.
+        If you accept analytics cookies, we count page visits to improve the service.
+        We do not collect personal data or share data with third parties beyond advertising partners (Google AdSense) if you accept cookies.
       </p>
 
       <p class="footer-disclaimer">
         <strong>No Warranty:</strong> This service is provided "as is" without warranty of any kind.
-        Use at your own risk. InstaSummary accepts no liability for decisions made based on AI-generated summaries.
+        Use at your own risk.
       </p>
 
       <p class="footer-copy">&copy; <span id="yr"></span> InstaSummary. All rights reserved.</p>
     </div>
   </footer>
-  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
+
+  <!-- ── Cookie banner ── -->
+  <div id="cookie-banner" role="region" aria-label="Cookie consent" style="display:none">
+    <p>
+      🍪 We use a <strong>functional cookie</strong> to remember your preferences, and optional analytics to count visits and improve the service.
+      No personal data is collected. By clicking <em>Accept</em> you also consent to Google AdSense ads when enabled.
+      <a href="#" onclick="return false;">Learn more</a>
+    </p>
+    <div class="cookie-buttons">
+      <button id="cookie-accept">Accept</button>
+      <button id="cookie-reject">Reject non-essential</button>
+    </div>
+  </div>
 
   <script>
+    document.getElementById('yr').textContent = new Date().getFullYear();
+
+    /* ── Cookie helpers ── */
+    function setCookie(name, value, days) {
+      const d = new Date();
+      d.setTime(d.getTime() + days * 24 * 60 * 60 * 1000);
+      document.cookie = `${name}=${value};expires=${d.toUTCString()};path=/;SameSite=Lax`;
+    }
+
+    function getCookie(name) {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      return match ? match[2] : null;
+    }
+
+    /* ── Cookie consent ── */
+    const consent = getCookie('cookie_consent');
+    if (!consent) {
+      document.getElementById('cookie-banner').style.display = 'flex';
+    }
+
+    document.getElementById('cookie-accept').addEventListener('click', () => {
+      setCookie('cookie_consent', 'accepted', 365);
+      document.getElementById('cookie-banner').style.display = 'none';
+      loadCounter();
+    });
+
+    document.getElementById('cookie-reject').addEventListener('click', () => {
+      setCookie('cookie_consent', 'rejected', 365);
+      document.getElementById('cookie-banner').style.display = 'none';
+    });
+
+    /* ── Visit counter via CountAPI ── */
+    function loadCounter() {
+      fetch('https://api.countapi.xyz/hit/instasummary1-1.onrender.com/visits')
+        .then(r => r.json())
+        .then(data => {
+          document.getElementById('visit-count').textContent = data.value.toLocaleString();
+        })
+        .catch(() => {
+          document.getElementById('visit-count').textContent = '—';
+        });
+    }
+
+    if (consent === 'accepted') {
+      loadCounter();
+    } else {
+      document.getElementById('visit-count').textContent = '—';
+    }
+
+    /* ── Main summarise logic ── */
     const input    = document.getElementById('url-input');
     const goBtn    = document.getElementById('go');
     const status   = document.getElementById('status');
@@ -325,7 +428,6 @@
       const url = input.value.trim();
       if (!url) { shake(input); return; }
 
-      // Reset
       errorEl.textContent = '';
       result.style.display = 'none';
       goBtn.disabled = true;
@@ -346,18 +448,23 @@
           throw new Error(`Server error (${res.status}): ${rawText.slice(0, 200)}`);
         }
 
-        if (!res.ok) {
-          throw new Error(data.detail || 'Something went wrong.');
-        }
+        if (!res.ok) throw new Error(data.detail || 'Something went wrong.');
 
         status.textContent = 'Summarising with AI…';
-
-        // Render
         titleEl.textContent = data.title;
         listEl.innerHTML = data.bullets.map(b => `<li>${b}</li>`).join('');
         srcLink.href = data.source_url;
         result.style.display = 'block';
         status.textContent = '';
+
+        // increment counter on each summary
+        if (getCookie('cookie_consent') === 'accepted') {
+          fetch('https://api.countapi.xyz/hit/instasummary1-1.onrender.com/visits')
+            .then(r => r.json())
+            .then(data => {
+              document.getElementById('visit-count').textContent = data.value.toLocaleString();
+            });
+        }
 
       } catch (e) {
         errorEl.textContent = e.message;
@@ -378,30 +485,10 @@
 
     function shake(el) {
       el.style.animation = 'none';
-      el.offsetHeight; // reflow
+      el.offsetHeight;
       el.style.animation = 'shake .3s ease';
     }
   </script>
 
-  <!-- ── Cookie / Privacy notice (EU ePrivacy) ───────────────── -->
-  <div id="cookie-banner" role="region" aria-label="Privacy notice" style="display:none">
-    <p>
-      🍪 <strong>No cookies here.</strong>
-      InstaSummary does not use cookies, trackers, or analytics.
-      The URLs you submit are processed in real time and never stored.
-      We collect no personal data.
-    </p>
-    <button id="cookie-ok" aria-label="Acknowledge privacy notice">Got it</button>
-  </div>
-
-  <script>
-    if (!localStorage.getItem('privacy-acknowledged')) {
-      document.getElementById('cookie-banner').style.display = 'flex';
-    }
-    document.getElementById('cookie-ok').addEventListener('click', () => {
-      localStorage.setItem('privacy-acknowledged', '1');
-      document.getElementById('cookie-banner').style.display = 'none';
-    });
-  </script>
 </body>
 </html>
