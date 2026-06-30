@@ -134,6 +134,11 @@ def index():
     return FileResponse("static/index.html")
 
 
+@app.get("/ads.txt")
+def ads_txt():
+    return FileResponse("ads.txt", media_type="text/plain")
+
+
 @app.post("/ping")
 def ping():
     """Silently log a visit. Called from the frontend after cookie consent."""
