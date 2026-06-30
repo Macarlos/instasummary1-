@@ -5,10 +5,12 @@ Takes a URL, fetches page content, returns a 5-bullet AI summary via Groq API.
 
 import httpx
 import os
+import json
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from pydantic import BaseModel, HttpUrl
 from bs4 import BeautifulSoup
 
@@ -17,7 +19,7 @@ app = FastAPI(title="InstaSummary")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["POST"],
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -25,6 +27,28 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
+
+# Secret path segment for the private stats page — change this to your own secret!
+ADMIN_SECRET = os.environ.get("ADMIN_SECRET", "letmein123")
+
+# NOTE: Render's free tier has no persistent disk — this file resets to 0
+# whenever the app restarts or goes to sleep. Good enough for a rough sense
+# of traffic; for accurate long-term stats, a free database (e.g. Supabase)
+# would be needed later.
+COUNTER_FILE = Path("visit_counter.json")
+
+
+def _load_counter() -> dict:
+    if COUNTER_FILE.exists():
+        try:
+            return json.loads(COUNTER_FILE.read_text())
+        except Exception:
+            pass
+    return {"visits": 0, "summaries": 0}
+
+
+def _save_counter(data: dict) -> None:
+    COUNTER_FILE.write_text(json.dumps(data))
 
 
 class SummariseRequest(BaseModel):
@@ -110,9 +134,50 @@ def index():
     return FileResponse("static/index.html")
 
 
+@app.post("/ping")
+def ping():
+    """Silently log a visit. Called from the frontend after cookie consent."""
+    data = _load_counter()
+    data["visits"] += 1
+    _save_counter(data)
+    return JSONResponse({"ok": True})
+
+
+@app.get(f"/admin-{ADMIN_SECRET}")
+def admin_stats():
+    """Private stats page. URL only known to you."""
+    data = _load_counter()
+    html = f"""
+    <html>
+    <head><title>InstaSummary — Private Stats</title>
+    <style>
+      body {{ font-family: monospace; background:#111; color:#eee; padding:3rem; }}
+      h1 {{ color:#5b9eff; }}
+      .stat {{ font-size:2rem; margin: 1rem 0; }}
+      .label {{ color:#888; font-size:.9rem; }}
+      .note {{ color:#666; font-size:.8rem; margin-top:2rem; max-width:500px; }}
+    </style>
+    </head>
+    <body>
+      <h1>InstaSummary — Private Stats</h1>
+      <div class="stat">{data['visits']} <span class="label">visits logged</span></div>
+      <div class="stat">{data['summaries']} <span class="label">summaries generated</span></div>
+      <p class="note">Note: counts reset whenever the free Render instance restarts/sleeps.
+      This is a rough indicator, not exact analytics.</p>
+    </body>
+    </html>
+    """
+    return PlainTextResponse(content=html, media_type="text/html")
+
+
 @app.post("/summarise", response_model=SummariseResponse)
 def summarise(req: SummariseRequest):
     url_str = str(req.url)
     title, text = fetch_page_text(url_str)
     bullets = summarise_with_groq(title, text)
+
+    data = _load_counter()
+    data["summaries"] += 1
+    _save_counter(data)
+
     return SummariseResponse(title=title, bullets=bullets, source_url=url_str)

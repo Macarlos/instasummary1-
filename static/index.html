@@ -60,19 +60,6 @@
       font-style: italic;
     }
 
-    /* ── Visit counter ── */
-    .visit-counter {
-      font-size: .8rem;
-      color: var(--muted);
-      text-align: center;
-      margin-bottom: 2rem;
-      font-family: Arial, sans-serif;
-    }
-    .visit-counter span {
-      font-weight: 700;
-      color: var(--accent);
-    }
-
     .card {
       background: #fff;
       border: 1px solid var(--border);
@@ -282,11 +269,6 @@
   <h1>Any article.<br>Five bullets.<br>Right now.</h1>
   <p class="sub">Paste a URL — get back what matters.</p>
 
-  <!-- Visit counter -->
-  <p class="visit-counter">
-    Summaries generated so far: <span id="visit-count">…</span>
-  </p>
-
   <!-- Ad slot (top) — activate when AdSense approved -->
   <div class="ad-slot" id="ad-top">
     <!-- AdSense ad will appear here -->
@@ -334,8 +316,8 @@
 
       <p class="footer-disclaimer">
         <strong>Privacy & Cookies:</strong> InstaSummary uses a functional cookie solely to remember your cookie preference.
-        If you accept analytics cookies, we count page visits to improve the service.
-        We do not collect personal data or share data with third parties beyond advertising partners (Google AdSense) if you accept cookies.
+        If you accept, we log an anonymous count of visits and summaries generated to help us improve the service — no personal data, IP addresses, or browsing history is stored.
+        If Google AdSense is enabled, Google may set its own cookies in accordance with its own privacy policy.
       </p>
 
       <p class="footer-disclaimer">
@@ -384,7 +366,7 @@
     document.getElementById('cookie-accept').addEventListener('click', () => {
       setCookie('cookie_consent', 'accepted', 365);
       document.getElementById('cookie-banner').style.display = 'none';
-      loadCounter();
+      pingVisit();
     });
 
     document.getElementById('cookie-reject').addEventListener('click', () => {
@@ -392,22 +374,13 @@
       document.getElementById('cookie-banner').style.display = 'none';
     });
 
-    /* ── Visit counter via CountAPI ── */
-    function loadCounter() {
-      fetch('https://api.countapi.xyz/hit/instasummary1-1.onrender.com/visits')
-        .then(r => r.json())
-        .then(data => {
-          document.getElementById('visit-count').textContent = data.value.toLocaleString();
-        })
-        .catch(() => {
-          document.getElementById('visit-count').textContent = '—';
-        });
+    /* ── Silent visit ping (private, server-side count) ── */
+    function pingVisit() {
+      fetch('/ping', { method: 'POST' }).catch(() => {});
     }
 
     if (consent === 'accepted') {
-      loadCounter();
-    } else {
-      document.getElementById('visit-count').textContent = '—';
+      pingVisit();
     }
 
     /* ── Main summarise logic ── */
@@ -457,13 +430,9 @@
         result.style.display = 'block';
         status.textContent = '';
 
-        // increment counter on each summary
+        // log a summary event (private, server-side)
         if (getCookie('cookie_consent') === 'accepted') {
-          fetch('https://api.countapi.xyz/hit/instasummary1-1.onrender.com/visits')
-            .then(r => r.json())
-            .then(data => {
-              document.getElementById('visit-count').textContent = data.value.toLocaleString();
-            });
+          fetch('/ping', { method: 'POST' }).catch(() => {});
         }
 
       } catch (e) {
